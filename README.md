@@ -3,3 +3,4 @@ The circuit is substantially taken from Ampleon's application note but uses an M
 Attempts were made to use a 3-D printed shield covered in copper tape but ultimately this was changed to a 'proper' aluminium case which can be nevertheless be made at home.
 Output protection is provided by a 100W isolator from Bert Modderman (pe1rki.com)
 A 30v, 10A supply is required.
+Some parts and advice were provided by Vincent (M0LCR) and Mike (G4VSS)
