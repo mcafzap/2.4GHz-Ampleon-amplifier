@@ -10,4 +10,4 @@ The metal work was designed on FreeCAD and can be made from stock Al rod (10mm x
 
 Remember this is high frequency so everything must be kept short or shielded and properly 50 ohm terminated.
 
-Able assistance & some hardware was provided by Vincent (M0LCR) and Mike (G4VSS), but especially Anthony Tognarelli of Waterfield Electronics (waterfieldelectronics.com) for providing the pallets.
+Able assistance & some hardware was provided by Vincent (M0LCR) and Mike (G4VSS), but especially Anthony Tognarelli of Waterfield Electronics Ltd. (waterfieldelectronics.com) for providing the pallets.
