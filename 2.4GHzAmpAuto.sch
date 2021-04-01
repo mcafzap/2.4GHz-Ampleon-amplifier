@@ -1015,4 +1015,6 @@ Wire Wire Line
 Wire Wire Line
 	9700 1800 9700 1100
 Connection ~ 8600 1800
+Text Notes 8500 7300 0    50   ~ 0
+D1 or D2 can be substituted with 1 shorting link _not_ both
 $EndSCHEMATC
