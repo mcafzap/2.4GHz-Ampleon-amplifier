@@ -10,4 +10,4 @@ The metal work was designed on FreeCAD and can be made from stock Al bar (10mm x
 
 Remember this is high frequency so everything must be kept short or shielded and properly 50 ohm terminated.
 
-Thanks go to Vincent(M0LCR), Mike(G4VSS) and Brian(G4EWB) for software/hardware advice but thanks are especially owed to Anthony Tognarelli of Waterfield Electronics Ltd. (waterfieldelectronics.com) for providing the pallets.
+Thanks go to Vincent(M0LCR), Mike(G4VSS) and Brian(G4EWJ) for software/hardware advice but thanks are especially owed to Anthony Tognarelli of Waterfield Electronics Ltd. (waterfieldelectronics.com) for providing the pallets.
