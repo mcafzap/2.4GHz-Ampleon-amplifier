@@ -1,4 +1,4 @@
-update=01/04/2021 16:55:47
+update=27/04/2021 13:15:15
 version=1
 last_client=kicad
 [general]
@@ -34,7 +34,7 @@ LibDir=
 [schematic_editor]
 version=1
 PageLayoutDescrFile=
-PlotDirectoryName=./
+PlotDirectoryName=C:/Users/Scud/Documents/Kicad/2.4GHzAmpAuto/
 SubpartIdSeparator=0
 SubpartFirstId=65
 NetFmtName=
