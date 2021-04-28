@@ -16,7 +16,7 @@ int VoltagePinA = A1;
 int VoltagePinB = A2;
 const int Button1 = P2_3;
 const int Button2 = P2_4;
-const int Button3 = P2_7; //pin 18 on MSP430G2553
+const int Button3 = 18; //P2_7 on MSP430G2553
 
 const uint16_t degree[] = { 576, 563, 550, 537, 524, 511, 498, 485, 473, 460,
                             448, 435, 423, 412, 400, 388, 377, 366, 355, 344,
@@ -40,13 +40,16 @@ char SerBuf[8];
 int8_t i;
 uint16_t Vth, Vhi;
 uint16_t I1 = 0x1000, I2 = 0x1000;
-union {
-    struct {
+union
+{
+    struct
+    {
         uint16_t I1_offset;
         uint16_t I2_offset;
-    }Offset;
+    } Offset;
     unsigned char p[4];
-}Fdata;
+} Fdata;
+
 uint8_t volt, temp, C1Amps, C2Amps;
 uint16_t values[8];
 uint16_t Vg2, Vg1, status;
@@ -76,9 +79,16 @@ void setup()
 
 { // recover offsets...
     Flash.read(flash, &Fdata.p[0], 4);
-//    data.I1_offset = (p[0]<<8) | p[1];
+// these might  be 0xffff if a new chip, check and 0?
+    if (Fdata.Offset.I1_offset == 0xffff)
+        Fdata.Offset.I1_offset = 0;
+    if (Fdata.Offset.I2_offset == 0xffff)
+        Fdata.Offset.I2_offset = 0;
+    //    data.I1_offset = (p[0]<<8) | p[1];
 //    data.I2_offset = (p[2]<<8) | p[3];
     x = 0;
+    P1SEL = 0;
+    P2SEL = 0; // all I/O lines
     P1OUT = 0x00;
     P1DIR = 0xFF; // all outputs
     P2OUT = 0x00;
@@ -89,6 +99,7 @@ void setup()
     pinMode(Button1, INPUT_PULLUP);
     pinMode(Button2, INPUT_PULLUP);
     pinMode(Button3, INPUT_PULLUP);
+    pinMode(ThermistorPin, INPUT);
 
     digitalWrite(CS1, 1); //disable one current sensor
     digitalWrite(CS2, 1); //disable the other current sensor
@@ -158,15 +169,31 @@ void setup()
     u8x8.drawString(0, 6, "    Input Watts");
     Wire.endTransmission(1);
 
-    read4728(); // recover V bias settings
-    Vg2 = values[1];
-    Vg1 = values[3];
-    reset4728();
+    zeroBias = 1;  // Zero bias voltages on switch-on!
+    Vg1 = 0;
+    Vg2 = 0;
+
+    wrtVol4728(); //just do a volatile write for now - write to EEPROM on timeout
+
+//    read4728(); // recover V bias settings
+//    Vg2 = values[1];
+//    Vg1 = values[3];
+//    reset4728();
+    if ((digitalRead(Button1) == 0) ||(digitalRead(Button2) == 0))
+    {
+        read4728(); // bias about to be set, recover V bias settings
+        Vg2 = values[1];
+        Vg1 = values[3];
+        if (Vg1 < 1500) Vg1 = 1500;
+        if (Vg2 < 1500) Vg2 = 1500;
+        reset4728();
+    }
     if (digitalRead(Button1) == 0)
     {
         setMode = 1;
         u8x8.drawString(0, 6, "Vg1 Bias setting");
     }
+
     if (digitalRead(Button2) == 0)
     {
         setMode = 2;
@@ -236,22 +263,23 @@ void loop()
         Acc2 -= I2;     // x3
     }
 //
-    C1 = I1 + Fdata.Offset.I1_offset;  //MUST sort out negative sign!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    C1 = I1 + Fdata.Offset.I1_offset; //MUST sort out negative sign!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     x = 1;
     neg = ' ';
-    if (C1 < 0x1000) {
+    if (C1 < 0x1000)
+    {
         C1 = ~C1 + 1; //2's complement
         neg = '-';
     }
     C1 &= 0x0FFF;
 // Make all values positive (doesn't matter about current direction)
     displayRight(C1);  // move into SerBuf...
-        SerBuf[0] = neg;
-
+    SerBuf[0] = neg;
 
     C2 = I2 + Fdata.Offset.I2_offset;
     neg = ' ';
-    if (C2 < 0x1000) {
+    if (C2 < 0x1000)
+    {
         C2 = ~C2 + 1; //2's complement
         neg = '-';
     }
@@ -260,7 +288,7 @@ void loop()
 // Make all values positive (doesn't matter about current direction)
     u8x8.drawString(0, 4, SerBuf);
     displayRight(C2);
-        SerBuf[0] = neg;
+    SerBuf[0] = neg;
     u8x8.drawString(9, 4, SerBuf);
 
     Vhi = analogRead(VoltagePinA);
@@ -282,14 +310,14 @@ void loop()
     u8x8.drawString(2, 0, SerBuf);
 
     Vth = analogRead(ThermistorPin);
-    AccT = AccV + Vth;
-    Vth = AccT >> 4;    // /8
+    AccT = AccT + Vth;
+    Vth = AccT >> 4;    // /16
 
-    AccT = Vth << 4;    // x8
-    AccT -= Vth;        // x7
+    AccT = Vth << 4;    // x16
+    AccT -= Vth;        // x15
 
 // simple look-up for temperature - not enough resources
-    R2 = 20; //starting temperature - interpolate improvement
+    R2 = 20; //for interpolation improvement (?)
     x = 0;
     while ((Vth < degree[x]) && (x < 76)) //15 otherwise
     {
@@ -366,46 +394,55 @@ void loop()
         delay(100); //
     }
 
-    // both buttons down to store offsets
-
-    if ((digitalRead(Button1) == 0) && (digitalRead(Button2) == 0)
-            && (offsetRemoval == 0) && (setMode == 0) && (zeroBias == 1)) // store I offsets
+    if (setMode == 0)
     {
-        Fdata.Offset.I1_offset = 0x1000 - I1; // say 0x0ffe -> 0xfffe or -2
-        Fdata.Offset.I2_offset = 0x1000 - I2; // say 0x1003 -> 0x0003 or +3
-        offsetRemoval = 1; // Now write to Flash
+        // Offset Removal ********************************
+        // both buttons down to store offsets
+
+        if ((digitalRead(Button1) == 0) && (digitalRead(Button2) == 0)
+                && (offsetRemoval == 0) && (zeroBias == 1)) // store I offsets
+        {
+            Fdata.Offset.I1_offset = 0x1000 - I1; // say 0x0ffe -> 0xfffe or -2
+            Fdata.Offset.I2_offset = 0x1000 - I2; // say 0x1003 -> 0x0003 or +3
+            offsetRemoval = 1; // Now write to Flash
 //        Fdata.p[0] = I1_offset >> 8;
 //        Fdata.p[1] = I1_offset & 0xff;
 //        Fdata.p[2] = I2_offset >> 8;
 //        Fdata.p[3] = I2_offset & 0xff;
-        Flash.erase(flash);
-        Flash.write(flash, &Fdata.p[0], 4);
+            Flash.erase(flash);
+            Flash.write(flash, &Fdata.p[0], 4);
 //        Flash.write(flash+1, &q, 1);
 //        Flash.write(flash+2, &r, 1);
 //        Flash.write(flash+3, &s, 1);
-        while ((digitalRead(Button1) == 0) || (digitalRead(Button2) == 0))
-            ; // now wait here for release of both buttons
-    }
+// No need to wait!        while ((digitalRead(Button1) == 0) || (digitalRead(Button2) == 0))
+            ;// now wait here for release of both buttons
+        }
 
-    // zero the bias voltages until PTT is pulled low
-    if ((digitalRead(Button3 == 0)) && (zeroBias == 0) && (setMode == 0))
-    {
-        zeroBias = 1; // do general reset to restore eeprom values to outputs
-        reset4728();
-    }
-    else // restore values if we've been here...
-    {
-        if ((digitalRead(Button3 == 1)) && (setMode == 0) && (zeroBias == 1)) // zero bias voltage
+        //********************PTT SECTION********************
+        // If not setting bias voltages, zero the bias voltages until PTT is pulled low
+        // If the first condition is invalid, the second may also be, so the entire section is skipped
+        // To make PTT function, Button3 must be held down at least once after switch-on.
+        if (digitalRead(Button3) == 0)
         {
-            zeroBias = 0;
+
+            if (zeroBias == 1)
+            {
+                zeroBias = 0; // do general reset to restore eeprom values to outputs
+                reset4728();
+            }
+        }
+        else // restore values if we've been here...
+        if (zeroBias == 0) // zero bias voltage
+        {
+            zeroBias = 1;
             Vg1 = 0;
             Vg2 = 0;
 
-            wrtVol4728(); //just write to volatile for now - write to EEPROM on timeout
-        }
-    }
+            wrtVol4728(); //just do a volatile write for now - write to EEPROM on timeout
+        } // end of PTT section
 
-    Wire.endTransmission();
+    } // end of 'mode = 0' sections (PTT & bias removal)
+//    Wire.endTransmission();
 } //main Energia loop
 
 // subroutines....
@@ -439,7 +476,7 @@ void wrtEEP4728()
 }
 
 void wrtVol4728(void)
-{
+{ //Writes values to device, but only into volatile memory
     Wire = TwoWire(0);
     Wire.beginTransmission(0x60);
     hiByte = Vg2 >> 8;
@@ -456,7 +493,7 @@ void wrtVol4728(void)
     Wire.write(loByte); //send value
     Wire.write(hiByte); //send value
     Wire.write(loByte); //send value
-    Wire.endTransmission();
+    Wire.endTransmission(1);
 }
 
 void reset4728()
@@ -464,7 +501,7 @@ void reset4728()
     Wire = TwoWire(0);
     Wire.beginTransmission(0x00);
     Wire.write(0x06);
-    Wire.endTransmission();
+    Wire.endTransmission(1);
 }
 
 void read4728(void)
@@ -481,7 +518,7 @@ void read4728(void)
             values[x] = word((hiByte & 0x0f), loByte); //combine & store
         }
     }
-    Wire.endTransmission();
+    Wire.endTransmission(1);
 }
 
 // The  following are for setting the bandwidth of the current sensors
