@@ -1,3 +1,6 @@
+![boxedamp](https://user-images.githubusercontent.com/7837085/122387344-aeba7080-cf66-11eb-9de9-8298358cfca9.jpg)
+![vcloseamp](https://user-images.githubusercontent.com/7837085/122387371-b417bb00-cf66-11eb-93cf-5f4b97f6fb14.jpg)
+![closeAMP](https://user-images.githubusercontent.com/7837085/122387382-b5e17e80-cf66-11eb-9c04-e46fb2b42e3e.jpg)
 # This amplifier is based on the Ampleon BCP2425M9X2S250-1 pallet
 
 The bias circuit is taken from Ampleon's application note AN10900. There is an MSP430G2553 processor and an I2C 1.3" OLED display and 2 digital current monitors using the TLI4970. Unfortunately this current measurement device is end-of life, but it remains the best for resolving 6.25mA and measuring up to 25A. The display monitors voltage & current of each stage, sets the bias of each stage and shows the total power used.
