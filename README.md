@@ -11,3 +11,5 @@ The metal work was designed on FreeCAD and can be made from stock Al bar (10mm x
 Remember this is high frequency so everything must be kept short or shielded and properly 50 ohm terminated.
 
 Thanks go to Vincent(M0LCR), Mike(G4VSS) and Brian(G4EWJ) for software/hardware advice but thanks are especially owed to Anthony Tognarelli of Waterfield Electronics Ltd. (waterfieldelectronics.com) for providing the pallets.
+
+If I were to do this again? I'd simply use multi-turn presets to set the bias levels, (10K across a 3.3v supply). Much of the circuitry is concerned with displaying little-used data like power input and bias currents - once set, these are never changed.
